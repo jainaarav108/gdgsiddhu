@@ -23,6 +23,8 @@ export interface IPLPlayer {
   century_scorer: boolean;
   known_for_sixes: boolean;
   left_handed: boolean;
+  uncapped?: boolean;
+  teenager?: boolean;
 }
 
 // ─── Team Entity ───────────────────────────────────────────────────────────────

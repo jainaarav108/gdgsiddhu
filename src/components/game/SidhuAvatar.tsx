@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
 import type { GamePhase } from "@/types";
 
 interface SidhuAvatarProps {
@@ -8,11 +9,35 @@ interface SidhuAvatarProps {
   confidence: number;
 }
 
+const THINKING_QUOTES = [
+  "Hmm... Oye Guru!",
+  "Let me think...",
+  "Dimag ki batti...",
+  "Zor lagao!",
+];
+
+const GUESSING_QUOTES = [
+  "Thoko Taali! 👏",
+  "Khatak! ⚡",
+  "Chak de phatte! 🔥",
+  "Guru, yeh le! 🏏",
+];
+
 export default function SidhuAvatar({ phase, confidence }: SidhuAvatarProps) {
   const isThinking = phase === "thinking";
   const isGuessing = phase === "guessing";
   const isDone = phase === "done";
   const isAsking = phase === "asking";
+
+  const [quote, setQuote] = useState("...");
+
+  useEffect(() => {
+    if (isThinking || isAsking) {
+      setQuote(THINKING_QUOTES[Math.floor(Math.random() * THINKING_QUOTES.length)]);
+    } else if (isGuessing || isDone) {
+      setQuote(GUESSING_QUOTES[Math.floor(Math.random() * GUESSING_QUOTES.length)]);
+    }
+  }, [phase]);
 
   // Dynamic colors based on confidence
   const glowColor =
@@ -51,93 +76,112 @@ export default function SidhuAvatar({ phase, confidence }: SidhuAvatarProps) {
           className="w-full h-full"
         >
           {/* Stadium light halo */}
-          <ellipse cx="100" cy="215" rx="55" ry="8" fill="rgba(255,215,0,0.2)" />
+          <ellipse cx="100" cy="215" rx="60" ry="10" fill="rgba(255,215,0,0.15)" />
           
-          {/* Body / Suit */}
-          <rect x="45" y="145" width="110" height="75" rx="12" fill="#1a2744" />
-          <rect x="55" y="145" width="38" height="75" rx="4" fill="#0d1530" />
-          <rect x="107" y="145" width="38" height="75" rx="4" fill="#0d1530" />
+          {/* Suit Jacket Back / Shoulders */}
+          <path d="M30 200 Q40 140 70 140 L130 140 Q160 140 170 200 Z" fill="#222" />
           
-          {/* Tie */}
-          <path d="M97 148 L103 148 L108 180 L100 190 L92 180 Z" fill="#FFD700" />
-          <path d="M97 148 L103 148 L105 158 L100 162 L95 158 Z" fill="#FFA500" />
+          {/* White Shirt */}
+          <path d="M80 140 L120 140 L100 200 Z" fill="#FFF" />
           
-          {/* Collar */}
-          <path d="M75 145 L100 165 L125 145" stroke="white" strokeWidth="2" fill="none" />
+          {/* Orange Tie */}
+          <path d="M96 145 L104 145 L108 190 L100 200 L92 190 Z" fill="#FF9800" />
+          
+          {/* Suit Lapels */}
+          <path d="M70 140 L85 170 L70 200 L40 200 Z" fill="#1A1A1A" />
+          <path d="M130 140 L115 170 L130 200 L160 200 Z" fill="#1A1A1A" />
+          
+          {/* Pocket Square */}
+          <path d="M135 175 L145 175 L142 165 Z" fill="#FF9800" />
           
           {/* Neck */}
-          <rect x="88" y="125" width="24" height="22" rx="8" fill="#C67C5B" />
+          <rect x="88" y="120" width="24" height="25" rx="8" fill="#D2987D" />
           
           {/* Head */}
-          <ellipse cx="100" cy="110" rx="40" ry="42" fill="#C67C5B" />
+          <ellipse cx="100" cy="105" rx="36" ry="42" fill="#D2987D" />
           
-          {/* Turban */}
-          <ellipse cx="100" cy="75" rx="42" ry="18" fill="#FF8C00" />
-          <ellipse cx="100" cy="72" rx="40" ry="16" fill="#FFA500" />
-          <ellipse cx="100" cy="69" rx="38" ry="14" fill="#FFB732" />
-          <ellipse cx="100" cy="66" rx="35" ry="12" fill="#FF8C00" />
-          <ellipse cx="100" cy="63" rx="30" ry="10" fill="#FFA500" />
+          {/* Neat Beard */}
+          <path d="M64 105 Q64 150 100 155 Q136 150 136 105 Q125 125 100 125 Q75 125 64 105 Z" fill="#222" />
+          <path d="M68 110 Q68 145 100 150 Q132 145 132 110 Q120 120 100 120 Q80 120 68 110 Z" fill="#333" />
           
-          {/* Turban jewel */}
-          <circle cx="100" cy="60" r="5" fill="#FFD700" />
-          <circle cx="100" cy="60" r="3" fill="#FFF8DC" />
-          
-          {/* Turban fold lines */}
-          <path d="M62 74 Q100 65 138 74" stroke="rgba(255,140,0,0.5)" strokeWidth="1" fill="none" />
-          <path d="M65 79 Q100 70 135 79" stroke="rgba(255,140,0,0.5)" strokeWidth="1" fill="none" />
-          
+          {/* Ears */}
+          <ellipse cx="62" cy="108" rx="6" ry="10" fill="#D2987D" />
+          <ellipse cx="138" cy="108" rx="6" ry="10" fill="#D2987D" />
+
+          {/* Authentic Punjabi Turban (Patiala Shahi Pagg) */}
+          {/* Base */}
+          <path d="M60 85 Q100 40 140 85 Q135 45 100 35 Q65 45 60 85 Z" fill="#F57C00" />
+          {/* Fifty */}
+          <path d="M93 84 L100 75 L107 84 Z" fill="#111" />
+          {/* Right Folds */}
+          <path d="M100 75 Q135 60 140 88 Q120 92 100 84 Z" fill="#FF9800" />
+          <path d="M100 65 Q135 50 138 78 Q120 78 100 75 Z" fill="#FFB300" />
+          <path d="M100 55 Q130 40 133 68 Q120 63 100 65 Z" fill="#FF9800" />
+          <path d="M100 45 Q120 30 126 58 Q115 50 100 55 Z" fill="#FFB300" />
+          {/* Left Folds */}
+          <path d="M100 75 Q65 60 60 88 Q80 92 100 84 Z" fill="#F57C00" />
+          <path d="M100 65 Q65 50 62 78 Q80 78 100 75 Z" fill="#FF9800" />
+          <path d="M100 55 Q70 40 67 68 Q80 63 100 65 Z" fill="#F57C00" />
+          <path d="M100 45 Q80 30 74 58 Q85 50 100 55 Z" fill="#FF9800" />
+          {/* Crown */}
+          <path d="M80 50 Q100 25 120 50 Q100 60 80 50 Z" fill="#F57C00" />
+
           {/* Eyes */}
           <AnimatePresence>
             {isThinking ? (
               <>
-                {/* Squinting eyes (thinking) */}
-                <ellipse cx="86" cy="108" rx="7" ry="4" fill="#2D1B08" />
-                <ellipse cx="114" cy="108" rx="7" ry="4" fill="#2D1B08" />
+                <ellipse cx="86" cy="100" rx="6" ry="3" fill="#2D1B08" />
+                <ellipse cx="114" cy="100" rx="6" ry="3" fill="#2D1B08" />
               </>
             ) : (
               <>
-                <ellipse cx="86" cy="108" rx="7" ry="8" fill="white" />
-                <ellipse cx="114" cy="108" rx="7" ry="8" fill="white" />
-                <circle cx="87" cy="109" r="4" fill="#2D1B08" />
-                <circle cx="115" cy="109" r="4" fill="#2D1B08" />
-                <circle cx="88" cy="107" r="1.5" fill="white" />
-                <circle cx="116" cy="107" r="1.5" fill="white" />
+                <ellipse cx="86" cy="100" rx="6" ry="5" fill="white" />
+                <ellipse cx="114" cy="100" rx="6" ry="5" fill="white" />
+                <circle cx="86" cy="100" r="3" fill="#2D1B08" />
+                <circle cx="114" cy="100" r="3" fill="#2D1B08" />
+                <circle cx="87" cy="99" r="1" fill="white" />
+                <circle cx="115" cy="99" r="1" fill="white" />
               </>
             )}
           </AnimatePresence>
-          
+
           {/* Eyebrows */}
-          <path d="M79 100 Q86 97 93 100" stroke="#6B3A1F" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-          <path d="M107 100 Q114 97 121 100" stroke="#6B3A1F" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+          <path d="M78 95 Q85 92 92 95" stroke="#222" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+          <path d="M108 95 Q115 92 122 95" stroke="#222" strokeWidth="2.5" strokeLinecap="round" fill="none" />
           
-          {/* Mustache */}
-          <path d="M84 120 Q100 128 116 120" stroke="#4A2508" strokeWidth="3" strokeLinecap="round" fill="none" />
-          <path d="M84 120 Q92 116 100 120 Q108 116 116 120" fill="#4A2508" />
+          {/* Mustache (Neat, joined to beard) */}
+          <path d="M85 125 Q100 120 115 125 Q110 130 100 128 Q90 130 85 125 Z" fill="#222" />
           
-          {/* Mouth */}
+          {/* Mouth (Speaking) */}
           {isDone && confidence >= 80 ? (
-            // Big smile on correct guess
-            <path d="M88 132 Q100 145 112 132" stroke="#4A2508" strokeWidth="2" strokeLinecap="round" fill="none" />
+            <ellipse cx="100" cy="132" rx="8" ry="6" fill="#4A2508" />
           ) : isThinking ? (
-            // Curious mouth
-            <path d="M92 134 Q100 138 108 134" stroke="#4A2508" strokeWidth="2" strokeLinecap="round" fill="none" />
+            <path d="M92 132 Q100 135 108 132" stroke="#4A2508" strokeWidth="2" strokeLinecap="round" fill="none" />
           ) : (
-            // Normal smile
-            <path d="M90 133 Q100 140 110 133" stroke="#4A2508" strokeWidth="2" strokeLinecap="round" fill="none" />
+            <>
+              <ellipse cx="100" cy="132" rx="8" ry="4" fill="#4A2508" />
+              <ellipse cx="100" cy="131" rx="6" ry="2" fill="#FFF" />
+            </>
           )}
-          
-          {/* Ears */}
-          <ellipse cx="60" cy="112" rx="8" ry="10" fill="#C67C5B" />
-          <ellipse cx="140" cy="112" rx="8" ry="10" fill="#C67C5B" />
-          
-          {/* Mic in hand */}
-          <rect x="130" y="155" width="8" height="28" rx="4" fill="#888" />
-          <circle cx="134" cy="152" r="9" fill="#333" />
-          <circle cx="134" cy="152" r="6" fill="#555" />
-          
-          {/* Arms */}
-          <path d="M45 155 Q30 170 35 185" stroke="#C67C5B" strokeWidth="14" strokeLinecap="round" fill="none" />
-          <path d="M155 155 Q170 165 160 185" stroke="#C67C5B" strokeWidth="14" strokeLinecap="round" fill="none" />
+
+          {/* Right Hand (Viewer's left) - Pointing */}
+          {/* Arm */}
+          <path d="M45 160 Q30 140 50 120" stroke="#222" strokeWidth="18" strokeLinecap="round" fill="none" />
+          <path d="M45 160 Q30 140 50 120" stroke="#1A1A1A" strokeWidth="14" strokeLinecap="round" fill="none" />
+          {/* Hand/Finger */}
+          <circle cx="50" cy="115" r="8" fill="#D2987D" />
+          <rect x="47" y="100" width="6" height="15" rx="3" fill="#D2987D" />
+
+          {/* Left Hand (Viewer's right) - Holding Mic */}
+          {/* Arm */}
+          <path d="M155 160 Q165 150 140 140" stroke="#222" strokeWidth="18" strokeLinecap="round" fill="none" />
+          <path d="M155 160 Q165 150 140 140" stroke="#1A1A1A" strokeWidth="14" strokeLinecap="round" fill="none" />
+          {/* Mic */}
+          <rect x="135" y="115" width="8" height="30" rx="4" fill="#333" />
+          <circle cx="139" cy="115" r="10" fill="#111" />
+          <path d="M129 115 A10 10 0 0 0 149 115" stroke="#666" strokeWidth="2" fill="none" />
+          {/* Hand */}
+          <circle cx="138" cy="140" r="10" fill="#D2987D" />
           
           {/* Confidence glow ring */}
           {confidence > 70 && (
@@ -156,28 +200,27 @@ export default function SidhuAvatar({ phase, confidence }: SidhuAvatarProps) {
           )}
         </svg>
 
-        {/* Phase indicator badge */}
+        {/* Comic Thought Bubble */}
         <AnimatePresence mode="wait">
-          {isThinking && (
+          {!isDone && (
             <motion.div
-              key="thinking"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0 }}
-              className="absolute -top-2 -right-2 bg-neon-yellow text-stadium-black text-xs font-bold px-2 py-1 rounded-full"
+              key={quote}
+              initial={{ opacity: 0, scale: 0.5, y: 10, x: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 5 }}
+              className="absolute -top-6 -right-16 md:-right-24 bg-white text-black font-black italic px-4 py-3 rounded-3xl shadow-xl z-10 border-4 border-black"
+              style={{
+                filter: "drop-shadow(4px 4px 0px rgba(0,0,0,0.5))",
+                transformOrigin: "bottom left"
+              }}
             >
-              🤔 Thinking...
-            </motion.div>
-          )}
-          {isGuessing && (
-            <motion.div
-              key="guessing"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0 }}
-              className="absolute -top-2 -right-2 bg-neon-red text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse"
-            >
-              ⚡ Guessing!
+              <span className="relative z-10 whitespace-nowrap text-sm md:text-base">
+                {quote}
+              </span>
+              {/* Bubble Tail */}
+              <div className="absolute -bottom-3 left-6 w-4 h-4 bg-white border-b-4 border-r-4 border-black rounded-br-lg transform rotate-45"></div>
+              <div className="absolute -bottom-6 left-2 w-2 h-2 bg-white border-2 border-black rounded-full"></div>
+              <div className="absolute -bottom-8 left-0 w-1.5 h-1.5 bg-white border-2 border-black rounded-full"></div>
             </motion.div>
           )}
         </AnimatePresence>

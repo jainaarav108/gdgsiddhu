@@ -1,8 +1,8 @@
 import type { IPLPlayer } from "./types";
 // Compact builder: [name,nat,bat,bowl,role,capt,wk,open,fin,over,ret,title,power,spin,pace,team,teams,era,cent,six,lh]
 type P=[string,IPLPlayer["nationality"],IPLPlayer["batting_style"],IPLPlayer["bowling_style"],IPLPlayer["role"],
-  boolean,boolean,boolean,boolean,boolean,boolean,boolean,boolean,boolean,boolean,string,string[],IPLPlayer["era"],boolean,boolean,boolean];
-const b=(d:P):IPLPlayer=>({id:d[0].toLowerCase().replace(/\s+/g,"_"),name:d[0],nationality:d[1],batting_style:d[2],bowling_style:d[3],role:d[4],captain:d[5],wicketkeeper:d[6],opener:d[7],finisher:d[8],overseas:d[9],retired_from_ipl:d[10],title_winner:d[11],power_hitter:d[12],spin_bowler:d[13],pace_bowler:d[14],primary_team:d[15],teams:d[16],era:d[17],century_scorer:d[18],known_for_sixes:d[19],left_handed:d[20]});
+  boolean,boolean,boolean,boolean,boolean,boolean,boolean,boolean,boolean,boolean,string,string[],IPLPlayer["era"],boolean,boolean,boolean,boolean?,boolean?];
+const b=(d:P):IPLPlayer=>({id:d[0].toLowerCase().replace(/\s+/g,"_"),name:d[0],nationality:d[1],batting_style:d[2],bowling_style:d[3],role:d[4],captain:d[5],wicketkeeper:d[6],opener:d[7],finisher:d[8],overseas:d[9],retired_from_ipl:d[10],title_winner:d[11],power_hitter:d[12],spin_bowler:d[13],pace_bowler:d[14],primary_team:d[15],teams:d[16],era:d[17],century_scorer:d[18],known_for_sixes:d[19],left_handed:d[20],uncapped:d[21]??false,teenager:d[22]??false});
 const R="Right-handed",L="Left-handed",RF="Right-arm fast",RM="Right-arm medium",LF="Left-arm fast",LM="Left-arm medium",RO="Right-arm off-spin",LO="Left-arm orthodox",LS="Leg-spin",WS="Wrist-spin",N="None";
 const BAT="Batsman",BOW="Bowler",AR="All-rounder",WKB="Wicketkeeper-Batsman";
 const IN="Indian",AU="Australian",WI="West Indian",SA="South African",SL="Sri Lankan",EN="English",NZ="New Zealander",AF="Afghan";
@@ -13,7 +13,7 @@ export const PLAYERS:IPLPlayer[]=([
 ["MS Dhoni",IN,R,N,WKB,true,true,false,true,false,false,true,true,false,false,"CSK",["CSK","RPS"],"All",false,true,false],
 ["Suresh Raina",IN,L,RO,BAT,false,false,false,false,false,true,true,true,false,false,"CSK",["CSK","GT"],"Early",true,true,true],
 ["Gautam Gambhir",IN,L,N,BAT,true,false,true,false,false,true,true,false,false,false,"KKR",["DD","KKR","LSG"],"Early",true,false,true],
-["Shikhar Dhawan",IN,L,N,BAT,false,false,true,false,false,false,true,false,false,false,"DC",["DC","MI","SRH","PBKS"],"Middle",true,false,true],
+["Shikhar Dhawan",IN,L,N,BAT,false,false,true,false,false,true,true,false,false,false,"DC",["DC","MI","SRH","PBKS"],"Middle",true,false,true],
 ["KL Rahul",IN,R,N,WKB,true,true,true,false,false,false,false,true,false,false,"LSG",["RCB","PBKS","LSG"],"Recent",true,true,false],
 ["Shreyas Iyer",IN,R,N,BAT,true,false,false,false,false,false,true,false,false,false,"KKR",["DC","KKR"],"Recent",true,false,false],
 ["Ambati Rayudu",IN,R,N,BAT,false,false,false,true,false,true,true,false,false,false,"CSK",["MI","CSK"],"Middle",true,false,false],
@@ -41,12 +41,12 @@ export const PLAYERS:IPLPlayer[]=([
 ["Ravichandran Ashwin",IN,R,RO,AR,false,false,false,false,false,false,true,false,true,false,"RR",["CSK","PBKS","DC","RR"],"All",false,false,false],
 ["Axar Patel",IN,L,LO,AR,false,false,false,false,false,false,true,false,true,false,"DC",["PBKS","DC"],"Recent",false,false,true],
 ["Washington Sundar",IN,L,RO,AR,false,false,false,false,false,false,false,false,true,false,"SRH",["RPS","RCB","SRH"],"Recent",false,false,true],
-["Krunal Pandya",IN,L,LO,AR,false,false,false,false,false,false,true,false,true,false,"LSG",["MI","LSG"],"Recent",false,false,true],
-["Venkatesh Iyer",IN,L,RM,AR,false,false,true,false,false,false,true,true,false,false,"KKR",["KKR"],"Recent",false,true,true],
+["Krunal Pandya",IN,L,LO,AR,false,false,false,false,false,false,true,false,true,false,"RCB",["MI","LSG","RCB"],"Recent",false,false,true],
+["Venkatesh Iyer",IN,L,RM,AR,false,false,true,false,false,false,true,true,false,false,"RCB",["KKR","RCB"],"Recent",false,true,true],
 ["Shardul Thakur",IN,R,RM,AR,false,false,false,false,false,false,false,false,false,true,"CSK",["CSK","DC","KKR"],"Recent",false,false,false],
 // ── Indian Bowlers ──
 ["Jasprit Bumrah",IN,R,RF,BOW,false,false,false,false,false,false,true,false,false,true,"MI",["MI"],"Recent",false,false,false],
-["Bhuvneshwar Kumar",IN,R,RM,BOW,false,false,false,false,false,false,false,false,false,true,"SRH",["SRH"],"Middle",false,false,false],
+["Bhuvneshwar Kumar",IN,R,RM,BOW,false,false,false,false,false,false,false,false,false,true,"RCB",["SRH","RCB"],"Middle",false,false,false],
 ["Mohammed Shami",IN,R,RF,BOW,false,false,false,false,false,false,true,false,false,true,"GT",["PBKS","DC","GT"],"Recent",false,false,false],
 ["Yuzvendra Chahal",IN,R,LS,BOW,false,false,false,false,false,false,false,false,true,false,"RR",["RCB","RR"],"Recent",false,false,false],
 ["Amit Mishra",IN,R,LS,BOW,false,false,false,false,false,true,false,false,true,false,"DC",["DC","SRH"],"Early",false,false,false],
@@ -78,7 +78,7 @@ export const PLAYERS:IPLPlayer[]=([
 ["Lasith Malinga",SL,R,RF,BOW,false,false,false,false,true,true,true,false,false,true,"MI",["MI"],"Early",false,false,false],
 ["Dale Steyn",SA,R,RF,BOW,false,false,false,false,true,true,false,false,false,true,"SRH",["DC","RCB","SRH"],"Early",false,false,false],
 ["Rashid Khan",AF,R,WS,BOW,false,false,false,false,true,false,true,false,true,false,"GT",["SRH","GT"],"Recent",false,true,false],
-["Kagiso Rabada",SA,R,RF,BOW,false,false,false,false,true,false,false,false,false,true,"DC",["DC","PBKS"],"Recent",false,false,false],
+["Kagiso Rabada",SA,R,RF,BOW,false,false,false,false,true,false,false,false,false,true,"GT",["DC","PBKS","GT"],"Recent",false,false,false],
 ["Pat Cummins",AU,R,RF,BOW,true,false,false,false,true,false,true,false,false,true,"KKR",["KKR","DC","SRH"],"Recent",false,false,false],
 ["Trent Boult",NZ,L,LF,BOW,false,false,false,false,true,false,true,false,false,true,"MI",["SRH","DC","MI","RR"],"Recent",false,false,true],
 ["Imran Tahir",SA,R,LS,BOW,false,false,false,false,true,false,true,false,true,false,"CSK",["DC","CSK"],"Middle",false,false,false],
@@ -126,8 +126,23 @@ export const PLAYERS:IPLPlayer[]=([
 ["Rahul Tripathi",IN,R,N,BAT,false,false,true,false,false,false,false,false,false,false,"SRH",["RPS","KKR","SRH"],"Recent",false,false,false],
 ["Dhruv Jurel",IN,R,N,WKB,false,true,false,false,false,false,false,false,false,false,"RR",["RR"],"Recent",false,false,false],
 ["Riyan Parag",IN,R,RO,AR,false,false,false,false,false,false,false,false,true,false,"RR",["RR"],"Recent",false,true,false],
-["Jitesh Sharma",IN,R,N,WKB,false,true,false,true,false,false,false,true,false,false,"PBKS",["PBKS","MI"],"Recent",false,true,false],
+["Jitesh Sharma",IN,R,N,WKB,false,true,false,true,false,false,false,true,false,false,"RCB",["PBKS","MI","RCB"],"Recent",false,true,false],
 ["Tushar Deshpande",IN,R,RF,BOW,false,false,false,false,false,false,true,false,false,true,"CSK",["CSK","DC"],"Recent",false,false,false],
 ["Varun Chakravarthy",IN,R,WS,BOW,false,false,false,false,false,false,true,false,true,false,"KKR",["KKR"],"Recent",false,false,false],
 ["Noor Ahmad",AF,L,LO,BOW,false,false,false,false,true,false,false,false,true,false,"GT",["GT"],"Recent",false,false,true],
+// ── New 2026 Additions ──
+["Sai Sudharsan",IN,L,N,BAT,false,false,true,false,false,false,false,false,false,false,"GT",["GT"],"Recent",true,false,true],
+["Vaibhav Sooryavanshi",IN,L,N,BAT,false,false,true,false,false,false,false,true,false,false,"RR",["RR"],"Recent",true,true,true,true,true],
+["Rajat Patidar",IN,R,N,BAT,true,false,false,false,false,false,true,true,false,false,"RCB",["RCB"],"Recent",true,true,false],
+["Prasidh Krishna",IN,R,RF,BOW,false,false,false,false,false,false,false,false,false,true,"GT",["KKR","RR","GT"],"Recent",false,false,false],
+["Shivam Dube",IN,L,RM,AR,false,false,false,false,false,false,true,true,false,true,"CSK",["RCB","RR","CSK"],"Recent",false,true,true],
+["Mayank Yadav",IN,R,RF,BOW,false,false,false,false,false,false,false,false,false,true,"LSG",["LSG"],"Recent",false,false,false],
+["Jake Fraser-McGurk",AU,R,N,BAT,false,false,true,false,true,false,false,true,false,false,"DC",["DC"],"Recent",false,true,false],
+["Matheesha Pathirana",SL,R,RF,BOW,false,false,false,false,true,false,true,false,false,true,"CSK",["CSK"],"Recent",false,false,false],
+["Tristan Stubbs",SA,R,N,WKB,false,true,false,true,true,false,false,true,false,false,"DC",["MI","DC"],"Recent",false,true,false],
+["Harshit Rana",IN,R,RF,BOW,false,false,false,false,false,false,true,false,false,true,"KKR",["KKR"],"Recent",false,false,false,true],
+["Shashank Singh",IN,R,RM,BAT,false,false,false,true,false,false,false,true,false,false,"PBKS",["SRH","PBKS"],"Recent",false,true,false,true],
+["Ashutosh Sharma",IN,R,N,BAT,false,false,false,true,false,false,false,true,false,false,"PBKS",["PBKS"],"Recent",false,true,false,true],
+["Rahul Tewatia",IN,L,LS,AR,false,false,false,true,false,false,true,true,true,false,"GT",["RR","PBKS","DC","GT"],"Recent",false,true,true],
+["Sandeep Sharma",IN,R,RM,BOW,false,false,false,false,false,false,false,false,false,true,"RR",["PBKS","SRH","RR"],"Middle",false,false,false],
 ] as P[]).map(b);
