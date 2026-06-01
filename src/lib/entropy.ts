@@ -171,7 +171,28 @@ export class EntropyEngine {
   }
 
   // Update probabilities using Bayes Theorem
+  // Update probabilities using Bayes Theorem
   updateProbability(questionId: string, answer: Answer) {
+    if (questionId.startsWith("confirm_")) {
+      this.askedQuestionIds.add(questionId);
+      const entityName = questionId.substring("confirm_".length);
+      const idx = this.entities.findIndex((e) => e.name === entityName);
+      if (idx !== -1) {
+        if (answer === "yes") {
+          // Correct guess! Set its probability to 1.0, others to 0.0
+          this.probabilities = this.probabilities.map((_, i) => (i === idx ? 1.0 : 0.0));
+        } else {
+          // Incorrect guess! Set its probability to 0.0 and re-normalize the rest
+          this.probabilities[idx] = 0.0;
+          const sum = this.probabilities.reduce((acc, p) => acc + p, 0);
+          if (sum > 0) {
+            this.probabilities = this.probabilities.map((p) => p / sum);
+          }
+        }
+      }
+      return;
+    }
+
     const question = getQuestionsForMode(this.mode).find((q) => q.id === questionId);
     if (!question) return;
 
@@ -198,8 +219,7 @@ export class EntropyEngine {
     const questions = getQuestionsForMode(this.mode).filter((q) => !this.askedQuestionIds.has(q.id));
     if (questions.length === 0) return null;
 
-    let bestQuestion: CandidateQuestion | null = null;
-    let maxEntropy = -1;
+    const candidates: { question: CandidateQuestion; entropy: number }[] = [];
 
     for (const q of questions) {
       // Calculate P(a) for each answer choice
@@ -224,13 +244,22 @@ export class EntropyEngine {
         }
       }
 
-      if (entropy > maxEntropy) {
-        maxEntropy = entropy;
-        bestQuestion = q;
-      }
+      candidates.push({ question: q, entropy });
     }
 
-    return bestQuestion ? { question: bestQuestion, entropy: maxEntropy } : null;
+    if (candidates.length === 0) return null;
+
+    // Sort descending by entropy
+    candidates.sort((a, b) => b.entropy - a.entropy);
+
+    // Pick from the top questions within 92% of the maximum entropy to add variety.
+    // We limit our selection pool to at most the top 3 candidates.
+    const maxEntropy = candidates[0].entropy;
+    const threshold = maxEntropy * 0.92;
+    const topPool = candidates.filter((c) => c.entropy >= threshold).slice(0, 3);
+
+    const chosen = topPool[Math.floor(Math.random() * topPool.length)];
+    return chosen;
   }
 
   // Get current confidence (highest probability)

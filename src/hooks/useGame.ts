@@ -77,43 +77,85 @@ export function useGame(uid: string | null) {
     }
   }, [uid, store, getCtx]);
 
-  const submitAnswer = useCallback(
-    async (answer: Answer) => {
-      if (isProcessingRef.current || store.isLoading || !store.mode || !store.currentQuestionId) return;
-      isProcessingRef.current = true;
-      store.setIsLoading(true);
+  const confirmResult = useCallback(
+    async (isCorrect: boolean) => {
+      const currentState = useGameStore.getState();
+      if (!uid || !currentState.sessionId) return;
+      currentState.setIsCorrect(isCorrect);
+
+      const mood = isCorrect ? "win" : "loss";
+      currentState.setCurrentMood(mood);
+      getPersonalityDialogue(
+        getCtx({ isCorrect, confidence: currentState.confidence })
+      ).then((line) => currentState.setPersonalityLine(line));
 
       try {
-        const newBallsUsed = store.ballsUsed + 1;
+        await completeSession(currentState.sessionId, currentState.qnas, currentState.guess, isCorrect, currentState.ballsUsed);
+        await updateUserAfterGame(uid, isCorrect, currentState.ballsUsed);
+      } catch (err) {
+        console.error(err);
+      }
+    },
+    [uid, getCtx]
+  );
+
+  const submitAnswer = useCallback(
+    async (answer: Answer) => {
+      const currentState = useGameStore.getState();
+      if (isProcessingRef.current || currentState.isLoading || !currentState.mode || !currentState.currentQuestionId) return;
+      isProcessingRef.current = true;
+      currentState.setIsLoading(true);
+
+      try {
+        const newBallsUsed = currentState.ballsUsed + 1;
 
         // Initialize entropy engine and load state from store
-        const engine = new EntropyEngine(store.mode);
-        const qnasHistory = store.qnas.map((q) => ({
+        const engine = new EntropyEngine(currentState.mode);
+        const qnasHistory = currentState.qnas.map((q) => ({
           questionId: q.questionId!,
           answer: q.answer,
         }));
         engine.loadState(qnasHistory);
 
         // Update probabilities based on new user answer
-        engine.updateProbability(store.currentQuestionId, answer);
+        engine.updateProbability(currentState.currentQuestionId, answer);
 
         const newConfidence = Math.round(engine.getConfidence() * 100);
         const remaining = engine.getRemainingEntities();
-        store.setRemainingEntities(
+        currentState.setRemainingEntities(
           remaining.map((r) => ({ name: r.entity.name, probability: r.probability }))
         );
 
-        // Add answer to Zustand
-        store.addAnswer(answer, store.currentQuestion, newConfidence, store.currentQuip, store.currentQuestionId);
+        // If the question was a confirmation question and user said "yes", we won!
+        const isConfirmation = currentState.currentQuestionId.startsWith("confirm_");
+        if (isConfirmation && answer === "yes") {
+          const guessName = currentState.currentQuestionId.substring("confirm_".length);
+          currentState.addAnswer(answer, currentState.currentQuestion, 100, currentState.currentQuip, currentState.currentQuestionId);
 
-        // Aggressive guessing triggers at 85%, and direct guess allowed before 15 balls at 95% confidence
-        const shouldGuess =
-          newBallsUsed >= MAX_BALLS ||
-          newConfidence >= 95 ||
-          (newConfidence >= 85 && remaining[0].probability > 0.85);
+          const ctx = getCtx({
+            confidence: 100,
+            ballsUsed: newBallsUsed,
+            lastAnswer: answer,
+            remainingCount: remaining.length,
+          });
 
-        if (shouldGuess) {
-          store.setGamePhase("guessing");
+          const { speech, quote } = await buildGuessReveal(guessName, ctx);
+
+          currentState.setConfidence(100);
+          currentState.setGuess(guessName, speech, quote);
+          await confirmResult(true);
+          router.push("/result");
+          return;
+        }
+
+        // Add answer to Zustand (either normal question or a rejected confirmation question)
+        currentState.addAnswer(answer, currentState.currentQuestion, newConfidence, currentState.currentQuip, currentState.currentQuestionId);
+
+        // Check if we should guess (which only happens if we are at MAX_BALLS)
+        const isAtMaxBalls = newBallsUsed >= MAX_BALLS;
+
+        if (isAtMaxBalls) {
+          currentState.setGamePhase("guessing");
 
           const bestGuessEntity = engine.getBestGuess();
           const guessName = bestGuessEntity.name;
@@ -127,77 +169,90 @@ export function useGame(uid: string | null) {
 
           const { speech, quote } = await buildGuessReveal(guessName, ctx);
 
-          store.setConfidence(newConfidence);
-          store.setGuess(guessName, speech, quote);
+          currentState.setConfidence(newConfidence);
+          currentState.setGuess(guessName, speech, quote);
           router.push("/result");
         } else {
-          store.setGamePhase("thinking");
+          // Determine if we should ask a confirmation question
+          const topEntity = remaining[0];
+          const shouldConfirm = topEntity && topEntity.probability > 0.80;
 
-          const ctx = getCtx({
-            confidence: newConfidence,
-            ballsUsed: newBallsUsed,
-            lastAnswer: answer,
-            remainingCount: remaining.length,
-          });
-          const mood = getMoodState(ctx);
-          store.setCurrentMood(mood);
+          if (shouldConfirm) {
+            currentState.setGamePhase("thinking");
+            const guessName = topEntity.entity.name;
+            const rawConfirmQuestion = `Is your ${
+              currentState.mode === "player" ? "player" : currentState.mode === "team" ? "team" : "match"
+            } ${guessName}?`;
+            const nextQuestionId = `confirm_${guessName}`;
 
-          const nextQResult = engine.selectBestQuestion();
+            const ctx = getCtx({
+              confidence: newConfidence,
+              ballsUsed: newBallsUsed,
+              lastAnswer: answer,
+              remainingCount: remaining.length,
+            });
+            const mood = getMoodState(ctx);
+            currentState.setCurrentMood(mood);
 
-          if (!nextQResult) {
-            // Out of questions - force a guess
-            const bestGuessEntity = engine.getBestGuess();
-            const guessName = bestGuessEntity.name;
-            const { speech, quote } = await buildGuessReveal(guessName, ctx);
-            store.setConfidence(newConfidence);
-            store.setGuess(guessName, speech, quote);
-            router.push("/result");
-            return;
+            const [personalityLine, rewriteResult] = await Promise.all([
+              getPersonalityDialogue(ctx),
+              rewriteQuestion(rawConfirmQuestion, ctx),
+            ]);
+
+            currentState.setCurrentQuestionId(nextQuestionId);
+            currentState.setCurrentQuestion(rewriteResult.styled, rewriteResult.quip);
+            currentState.setConfidence(newConfidence);
+            currentState.setPersonalityLine(personalityLine);
+            currentState.setGamePhase("asking");
+          } else {
+            // Ask normal question
+            currentState.setGamePhase("thinking");
+
+            const ctx = getCtx({
+              confidence: newConfidence,
+              ballsUsed: newBallsUsed,
+              lastAnswer: answer,
+              remainingCount: remaining.length,
+            });
+            const mood = getMoodState(ctx);
+            currentState.setCurrentMood(mood);
+
+            const nextQResult = engine.selectBestQuestion();
+
+            if (!nextQResult) {
+              // Out of questions - force a guess
+              const bestGuessEntity = engine.getBestGuess();
+              const guessName = bestGuessEntity.name;
+              const { speech, quote } = await buildGuessReveal(guessName, ctx);
+              currentState.setConfidence(newConfidence);
+              currentState.setGuess(guessName, speech, quote);
+              router.push("/result");
+              return;
+            }
+
+            // Next question details + tone rewrite in parallel
+            const [personalityLine, rewriteResult] = await Promise.all([
+              getPersonalityDialogue(ctx),
+              rewriteQuestion(nextQResult.question.text, ctx),
+            ]);
+
+            currentState.setCurrentQuestionId(nextQResult.question.id);
+            currentState.setCurrentQuestion(rewriteResult.styled, rewriteResult.quip);
+            currentState.setConfidence(newConfidence);
+            currentState.setPersonalityLine(personalityLine);
+            currentState.setGamePhase("asking");
           }
-
-          // Next question details + tone rewrite in parallel
-          const [personalityLine, rewriteResult] = await Promise.all([
-            getPersonalityDialogue(ctx),
-            rewriteQuestion(nextQResult.question.text, ctx),
-          ]);
-
-          store.setCurrentQuestionId(nextQResult.question.id);
-          store.setCurrentQuestion(rewriteResult.styled, rewriteResult.quip);
-          store.setConfidence(newConfidence);
-          store.setPersonalityLine(personalityLine);
-          store.setGamePhase("asking");
         }
       } catch (err) {
-        store.setError("Oye! The pitch got wet. Let's try that again!");
+        currentState.setError("Oye! The pitch got wet. Let's try that again!");
         console.error(err);
-        store.setGamePhase("asking");
+        currentState.setGamePhase("asking");
       } finally {
-        store.setIsLoading(false);
+        currentState.setIsLoading(false);
         isProcessingRef.current = false;
       }
     },
-    [store, router, getCtx]
-  );
-
-  const confirmResult = useCallback(
-    async (isCorrect: boolean) => {
-      if (!uid || !store.sessionId) return;
-      store.setIsCorrect(isCorrect);
-
-      const mood = isCorrect ? "win" : "loss";
-      store.setCurrentMood(mood);
-      getPersonalityDialogue(
-        getCtx({ isCorrect, confidence: store.confidence })
-      ).then((line) => store.setPersonalityLine(line));
-
-      try {
-        await completeSession(store.sessionId, store.qnas, store.guess, isCorrect, store.ballsUsed);
-        await updateUserAfterGame(uid, isCorrect, store.ballsUsed);
-      } catch (err) {
-        console.error(err);
-      }
-    },
-    [uid, store, getCtx]
+    [router, getCtx, confirmResult]
   );
 
   return { startGame, submitAnswer, confirmResult };
